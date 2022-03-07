@@ -1,0 +1,4 @@
+#This directory is created as an empty directory so the java compile.sh will work
+#This folder won't add anything to the github other than this gitignore
+*
+!.gitignore
