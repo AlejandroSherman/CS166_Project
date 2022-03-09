@@ -20,4 +20,4 @@ Run command:
 11. Run source ./CS166_Project/java/scripts/compile.sh
 12. Test the java interface
 13. Type appropriate response to exit from java interface
-14. Shut down server with source ./StopPostgreDB.sh
+14. Shut down server with source ./stopPostgreDB.sh
