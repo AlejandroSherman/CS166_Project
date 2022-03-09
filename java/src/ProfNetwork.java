@@ -441,4 +441,7 @@ public class ProfNetwork {
 
    }
 
+   public static void SearchPeople(){
+	
+   }
 }//end ProfNetwork
