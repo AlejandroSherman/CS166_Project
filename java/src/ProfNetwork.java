@@ -38,7 +38,7 @@ public class ProfNetwork {
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
-
+   static boolean print = false;
    /**
     * Creates a new instance of ProfNetwork
     *
@@ -181,10 +181,27 @@ public class ProfNetwork {
 
        int rowCount = 0;
 
-       // iterates through the result set and count nuber of results.
-       if(rs.next()){
-          rowCount++;
-       }//end while
+       // iterates through the result set and output them to standard out.
+       boolean outputHeader = true;
+       while (rs.next()){
+	if (print){
+	 ResultSetMetaData rsmd = rs.getMetaData ();
+       	 int numCol = rsmd.getColumnCount ();
+	 if(outputHeader){
+	    for(int i = 1; i <= numCol; i++){
+		System.out.print(rsmd.getColumnName(i) + "\t");
+	    }
+	    System.out.println();
+	    outputHeader = false;
+	 }
+         for (int i=1; i<=numCol; ++i)
+            System.out.print (rs.getString (i) + "\t");
+         System.out.println ();
+	}
+	rowCount++;  
+       }
+    
+
        stmt.close ();
        return rowCount;
    }
@@ -273,6 +290,7 @@ public class ProfNetwork {
                 System.out.println("2. Update Profile");
                 System.out.println("3. Write a new message");
                 System.out.println("4. Send Friend Request");
+		System.out.println("5. Search for a user");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
@@ -280,6 +298,7 @@ public class ProfNetwork {
                    case 2: UpdateProfile(esql); break;
                    case 3: NewMessage(esql); break;
                    case 4: SendRequest(esql); break;
+		   case 5: SearchUser(esql); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
                 }
@@ -441,7 +460,21 @@ public class ProfNetwork {
 
    }
 
-   public static void SearchPeople(){
-	
-   }
+   public static void SearchUser(ProfNetwork esql){
+	try {
+   		System.out.print("\tEnter a user ID to search for: ");
+        	String user = in.readLine();
+        	String query = String.format("SELECT * FROM USR WHERE userID='%s'", user);  
+		print = true;
+        	int get_user = esql.executeQuery(query);
+        	if (get_user <= 0){
+        		System.out.println("User not found. Try Again.");
+                	return;
+        	}
+		print = false;
+				
+   	} catch (Exception e) {
+		System.err.println (e.getMessage ());
+	}
+  }
 }//end ProfNetwork
