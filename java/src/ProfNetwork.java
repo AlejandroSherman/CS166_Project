@@ -254,11 +254,13 @@ public class ProfNetwork {
             System.out.println("---------");
             System.out.println("1. Create user");
             System.out.println("2. Log in");
+            System.out.println("3. Change a user password");
             System.out.println("9. < EXIT");
             String authorisedUser = null;
             switch (readChoice()){
                case 1: CreateUser(esql); break;
                case 2: authorisedUser = LogIn(esql); break;
+               case 3: ChangePassword(esql); break;
                case 9: keepon = false; break;
                default : System.out.println("Unrecognized choice!"); break;
             }//end switch
@@ -337,6 +339,10 @@ public class ProfNetwork {
          String login = in.readLine();
          System.out.print("\tEnter user password: ");
          String password = in.readLine();
+         if (password.length() == 0){
+            System.out.println("New password can't be empty. Try again.");
+            return;
+         }
          System.out.print("\tEnter user email: ");
          String email = in.readLine();
 
@@ -377,6 +383,48 @@ public class ProfNetwork {
    }//end
 
 // Rest of the functions definition go in here
+
+   /*
+    * Method to change password for a user without being logged in as that user
+    **/
+   public static void ChangePassword(ProfNetwork esql){
+      try{
+         System.out.print("\tEnter user login to change password for: ");
+         String login = in.readLine();
+         String query = String.format("SELECT * FROM USR WHERE userID='%s'", login);
+         int get_user = esql.executeQuery(query);
+         if (get_user <= 0){
+           System.out.println("User not found. Try Again.");
+           return;
+         }
+         else{
+           System.out.print("\tEnter current user password: ");
+           String old_password = in.readLine();
+           String query2 = String.format("SELECT * FROM USR WHERE userID='%s' AND password='%s'", login, old_password);
+           int verify = esql.executeQuery(query2);
+           if (verify <= 0){
+             System.out.println("Incorrect current Password. Try Again.");
+             return;
+           }
+           else{
+             System.out.print("\tEnter new user password: ");
+             String new_password = in.readLine();
+             if (new_password.length() == 0){
+                System.out.println("New password can't be empty. Try again.");
+                return;
+             }
+             String query3 = String.format("UPDATE USR SET password='%s' WHERE userID='%s'", new_password, login);
+             esql.executeUpdate(query3);
+             System.out.println("Successfully updated password.");
+             return;
+           }
+         }
+      }
+      catch(Exception e){
+         System.err.println (e.getMessage ());
+      }
+   }//end
+
    public static void FriendList(ProfNetwork esql){
 
    }
