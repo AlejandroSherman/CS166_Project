@@ -464,7 +464,7 @@ public class ProfNetwork {
 	try {
    		System.out.print("\tEnter a user ID to search for: ");
         	String user = in.readLine();
-        	String query = String.format("SELECT * FROM USR WHERE userID='%s'", user);  
+        	String query = String.format("SELECT userId, name, email FROM USR WHERE userID='%s'", user);  
 		print = true;
         	int get_user = esql.executeQuery(query);
         	if (get_user <= 0){
