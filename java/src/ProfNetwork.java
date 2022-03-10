@@ -17,6 +17,7 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Date;
 import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -277,7 +278,7 @@ public class ProfNetwork {
                 System.out.println("9. Log out");
                 switch (readChoice()){
                    case 1: FriendList(esql); break;
-                   case 2: UpdateProfile(esql); break;
+                   case 2: UpdateProfile(esql, authorisedUser); break;
                    case 3: NewMessage(esql); break;
                    case 4: SendRequest(esql); break;
                    case 9: usermenu = false; break;
@@ -429,8 +430,100 @@ public class ProfNetwork {
 
    }
 
-   public static void UpdateProfile(ProfNetwork esql){
-
+   public static void UpdateProfile(ProfNetwork esql, String authorisedUser){
+     try{
+       String query;
+       int verify;
+       boolean updatemenu = true;
+       while(updatemenu) {
+         System.out.println("UPDATE MENU");
+         System.out.println("---------");
+         System.out.println("1. Update your Name");
+         System.out.println("2. Update your User Login");
+         System.out.println("3. Update your Password");
+         System.out.println("4. Update your Email");
+         System.out.println("5. Update your Date of Birth");
+         System.out.println(".........................");
+         System.out.println("9. Exit Update Menu");
+         switch (readChoice()){
+            case 1:
+               System.out.print("\tEnter new Name - Press enter by itself to cancel: ");
+               String name = in.readLine(); //(Consider adding more edge case checks here. Such as inputting only a first name. Maybe check for at least one space present.)
+               if (name.length() == 0){ //Only consider adding the further checks if we have time for it
+                  System.out.println("Canceling.");
+                  break;
+               }
+               query = String.format("UPDATE USR SET name='%s' WHERE userID='%s'", name, authorisedUser);
+               esql.executeUpdate(query);
+               System.out.println("Successfully updated Name.");
+               break;
+            case 2:
+               System.out.print("\tEnter new User Login - Press enter by itself to cancel: ");
+               String login = in.readLine();
+               if (login.length() == 0){
+                  System.out.println("Cancelling.");
+                  break;
+               }
+               query = String.format("UPDATE USR SET userID='%s' WHERE userID='%s'", login, authorisedUser);
+               esql.executeUpdate(query);
+               System.out.println("Successfully updated User Login.");
+               break;
+            case 3:
+               System.out.print("\tEnter new Password - Press enter by itself to cancel: ");
+               String password = in.readLine();
+               if (password.length() == 0){
+                  System.out.println("Cancelling.");
+                  break;
+               }
+               query = String.format("UPDATE USR SET password='%s' WHERE userID='%s'", password, authorisedUser);
+               esql.executeUpdate(query);
+               System.out.println("Successfully updated Password.");
+               break;
+            case 4:
+               System.out.print("\tEnter new email - Press enter by itself to cancel: ");
+               String email = in.readLine();
+               if (email.length() == 0){
+                  System.out.println("Cancelling.");
+                  break;
+               }
+               query = String.format("UPDATE USR SET email='%s' WHERE userID='%s'", email, authorisedUser);
+               esql.executeUpdate(query);
+               System.out.println("Successfully updated Email.");
+               break;
+            case 5:
+               System.out.print("\tEnter Four Digit Birth Year: "); //Could add another check to ensure they really input digits instead of letters
+               String year = in.readLine();
+               if (year.length() != 4){
+                  System.out.println("Birth year must be 4 digits. Try again.");
+                  break;
+               }
+               System.out.print("\tEnter Two Digit Birth Month: ");
+               String month = in.readLine();
+               if (month.length() != 2){
+                  System.out.println("Birth month must be 2 digits. Try again.");
+                  break;
+               }
+               System.out.print("\tEnter Two Digit Birth Day: ");
+               String day = in.readLine();
+               if (day.length() != 2){
+                  System.out.println("Birth Day must be 2 digits. Try again.");
+                  break;
+               }
+               String hold = year + '-' + month + '-' + day;
+               Date dob = Date.valueOf(hold);//converting string into sql date
+               query = String.format("UPDATE USR SET dateOfBirth='%s' WHERE userID='%s'", dob, authorisedUser);
+               esql.executeUpdate(query);
+               System.out.println("Successfully updated Date Of Birth.");
+               break;
+            case 9: updatemenu = false; break;
+            default : System.out.println("Unrecognized choice!"); break;
+         }
+       }
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
    }
 
    public static void NewMessage(ProfNetwork esql){
