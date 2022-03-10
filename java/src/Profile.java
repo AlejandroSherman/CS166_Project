@@ -1,31 +1,33 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.ArrayList;
+
 class Profile {
-	String userId;
-	String password;
-	String email;
-	String fullname;
-	String dateOfBirth;
+	private static String userId;
+	private static String password;
+	private static String email;
+	private static String fullname;
+	private static String dateOfBirth;
 
-	boolean active = false;
+	public static boolean active = false;
 
-	public void setId(String id){
-		userId = id;	
+	private static BufferedReader in = new BufferedReader(
+                                new InputStreamReader(System.in));
+	
+	Profile(String[] info){
+		setId(info[1]);
+		setName(info[2]);
+		setEmail(info[3]);
+		setBirth(info[4]);
 	}
 
-	public void setPass(String pwd){
-		password = pwd;
-	}
-
-	String void setEmail(String em){
-		email = em;
-	}
-
-	String void setBirth(String birth){
-		dateOfBirth = birth;
-	}
-
-	String void setActive(boolean x){
-		active = x;
-	}
+	public static void setId(String id) { userId = id; }
+	public static void setName(String name) { fullname = name; }
+	public static void setPass(String pwd) { password = pwd; }
+	public static void setEmail(String em) { email = em; }
+	public static void setBirth(String birth) { dateOfBirth = birth; }
+	public static void setActive(boolean x){ active = x; }
 
 	public static void viewProfile(Profile x){
 		while(active){
@@ -45,7 +47,7 @@ class Profile {
                			case 1: break;
                			case 2: break;
                			case 3: break;
-               			case 9: return; break;
+               			case 9: setActive(false); return;
                			default : System.out.println("Unrecognized choice!"); break;
             		}
 		}
