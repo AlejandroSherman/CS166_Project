@@ -274,13 +274,15 @@ public class ProfNetwork {
                 System.out.println("2. Update Profile");
                 System.out.println("3. Write a new message");
                 System.out.println("4. Send Friend Request");
+                System.out.println("7. View Incoming Connection Requests");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
                    case 1: FriendList(esql); break;
                    case 2: UpdateProfile(esql, authorisedUser); break;
                    case 3: NewMessage(esql); break;
-                   case 4: SendRequest(esql); break;
+                   case 4: SendRequest(esql, authorisedUser); break;
+                   case 7: ViewRequests(esql, authorisedUser); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
                 }
@@ -530,8 +532,80 @@ public class ProfNetwork {
 
    }
 
-   public static void SendRequest(ProfNetwork esql){
+   public static void SendRequest(ProfNetwork esql, String authorisedUser){
+     try{
+        System.out.print("\tEnter userID to send a request to: ");
+        String sendToUser = in.readLine();
+        if (sendToUser.length() == 0){
+           System.out.println("Recipent can't be empty. Try again.");
+           return;
+        }
+        String query = String.format("SELECT * FROM USR WHERE userID='%s'", sendToUser);
+        int get_user = esql.executeQuery(query);
+        if (get_user <= 0){
+          System.out.println("Recipent not found. Try Again.");
+          return;
+        }
+        //Here add some sort of connection level check? It checks the friend list? Not sure about that part
+        //if (connection_level > 3){
+        //  System.out.println("Recipient out of connection bounds");
+        //  return;
+        //}
+        String status = "Request";
+        String query2 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','%s')", authorisedUser, sendToUser, status);
+				esql.executeUpdate(query2);
+        System.out.println("Successfully sent connection request.");
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
+   }
 
+   public static void SendRequestHelper(ProfNetwork esql, String authorisedUser, String sendToUser){ //Helper version of send request where the recipient is already known. Such as from the friendList
+     try{
+        String query = String.format("SELECT * FROM USR WHERE userID='%s'", sendToUser);
+        int get_user = esql.executeQuery(query);
+        if (get_user <= 0){
+          System.out.println("Recipent not found. Try Again.");
+          return;
+        }
+        //Here add some sort of connection level check? It checks the friend list? Not sure about that part
+        //if (connection_level > 3){
+        //  System.out.println("Recipient out of connection bounds");
+        //  return;
+        //}
+        String status = "Request";
+        String query2 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','%s')", authorisedUser, sendToUser, status);
+				esql.executeUpdate(query2);
+        System.out.println("Successfully sent connection request.");
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
+   }
+
+   public static void ViewRequests(ProfNetwork esql, String authorisedUser){ //For now just lists the incoming userID connections for testing purposes.
+     try{                                                                    //In the future a user should be able to accpet or reject any connections listed here
+        List<List<String>> get_requests = new ArrayList<List<String>>();
+        String status = "Request";
+        String query = String.format("SELECT userID FROM CONNECTION_USR WHERE connectionID='%s' AND status='%s'", authorisedUser, status);
+        get_requests = esql.executeQueryAndReturnResult(query);
+        if (get_requests.isEmpty()){
+          System.out.println("No incoming Requests found.");
+          return;
+        }
+        System.out.println("Here are the userIDs sending an incoming request");
+        for(int i = 0; i < get_requests.size(); i++){
+						System.out.println(get_requests.get(i).get(0));
+				}
+        System.out.println("Successfully displayed incoming requests.");
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
    }
 
 }//end ProfNetwork
