@@ -10,7 +10,6 @@
  *
  */
 
-
 import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -24,6 +23,73 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
 
+/* PROFILE CLASS */
+class Profile {
+	private static String userId;
+	private static String password;
+	private static String email;
+	private static String fullname;
+	private static String dateOfBirth;
+
+	public static boolean active = false;
+
+	private static BufferedReader in = new BufferedReader(
+                                new InputStreamReader(System.in));
+	
+	Profile(String[] info){
+		setId(info[1]);
+		setName(info[2]);
+		setEmail(info[3]);
+		setBirth(info[4]);
+	}
+
+	public static void setId(String id) { userId = id; }
+	public static void setName(String name) { fullname = name; }
+	public static void setPass(String pwd) { password = pwd; }
+	public static void setEmail(String em) { email = em; }
+	public static void setBirth(String birth) { dateOfBirth = birth; }
+	public static void setActive(boolean x){ active = x; }
+
+	public static void viewProfile(){
+		while(active){
+			System.out.println(userId + "'s Profile");
+			System.out.println("---------");
+			System.out.println("Name: " + fullname);
+			System.out.println("Email: " + email);
+			System.out.println("Birthday: " + dateOfBirth);
+			System.out.println();
+			System.out.println("Select an option:");
+			System.out.println("1. Send a message");
+			System.out.println("2. View friends list");
+			System.out.println("3. Remove friend");
+			System.out.println("9. Go back");
+
+			switch (readChoice()){
+               			case 1: break;
+               			case 2: break;
+               			case 3: break;
+               			case 9: setActive(false); return;
+               			default : System.out.println("Unrecognized choice!"); break;
+            		}
+		}
+	}
+
+	public static int readChoice() {
+      		int input;     
+      		do {
+         		System.out.print("Please make your choice: ");
+         		try { 
+            			input = Integer.parseInt(in.readLine());
+            			break;
+         		}catch (Exception e) {
+            			System.out.println("Your input is invalid!");
+            			continue;
+         		}
+      		} while (true);
+      		return input;
+   	}
+}
+
 /**
  * This class defines a simple embedded SQL utility class that is designed to
  * work with PostgreSQL JDBC drivers.
@@ -33,12 +99,13 @@ public class ProfNetwork {
 
    // reference to physical database connection.
    private Connection _connection = null;
-
+   
    // handling the keyboard inputs through a BufferedReader
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
    static boolean print = false;
+   public static String[] profInfo;
    /**
     * Creates a new instance of ProfNetwork
     *
@@ -118,14 +185,17 @@ public class ProfNetwork {
 	    System.out.println();
 	    outputHeader = false;
 	 }
-         for (int i=1; i<=numCol; ++i)
+         for (int i=1; i<=numCol; ++i){
             System.out.print (rs.getString (i) + "\t");
-         System.out.println ();
-         ++rowCount;
-      }//end while
-      stmt.close ();
-      return rowCount;
-   }//end executeQuery
+            System.out.println ();
+	    profInfo[i] = rs.getString(i);
+            ++rowCount;
+	
+         }//end while
+      }
+	stmt.close ();
+	return rowCount;
+  }
 
    /**
     * Method to execute an input query SQL instruction (i.e. SELECT).  This
@@ -172,39 +242,50 @@ public class ProfNetwork {
     * @return the number of rows returned
     * @throws java.sql.SQLException when failed to execute the query
     */
+
    public int executeQuery (String query) throws SQLException {
        // creates a statement object
        Statement stmt = this._connection.createStatement ();
-
+       
        // issues the query instruction
        ResultSet rs = stmt.executeQuery (query);
 
        int rowCount = 0;
 
-       // iterates through the result set and output them to standard out.
-       boolean outputHeader = true;
-       while (rs.next()){
-	if (print){
-	 ResultSetMetaData rsmd = rs.getMetaData ();
-       	 int numCol = rsmd.getColumnCount ();
+       // iterates through the result set and count nuber of results.
+       if(rs.next()){
+          rowCount++;
+       }//end while
+       stmt.close ();
+       return rowCount;
+   }
+
+   public String[] fillProfile (String query) throws SQLException {
+	String[] data = new String[5];
+	Statement stmt = this._connection.createStatement ();
+	ResultSet rs = stmt.executeQuery (query);
+	ResultSetMetaData rsmd = rs.getMetaData ();
+	
+	int numCol = rsmd.getColumnCount ();
+        int rowCount = 0;
+	boolean outputHeader = true;
+      while (rs.next()){
 	 if(outputHeader){
 	    for(int i = 1; i <= numCol; i++){
-		System.out.print(rsmd.getColumnName(i) + "\t");
+		//System.out.print(rsmd.getColumnName(i) + "\t");
 	    }
 	    System.out.println();
 	    outputHeader = false;
 	 }
-         for (int i=1; i<=numCol; ++i)
-            System.out.print (rs.getString (i) + "\t");
+         for (int i=1; i<=numCol; ++i){
+            //System.out.print (rs.getString (i) + "\t");
          System.out.println ();
-	}
-	rowCount++;  
-       }
-    
-
-       stmt.close ();
-       return rowCount;
-   }
+	    data[i] = rs.getString(i);
+      }
+	stmt.close ();	
+     }
+	return data;
+  }
 
    /**
     * Method to fetch the last value from sequence. This
@@ -464,15 +545,18 @@ public class ProfNetwork {
 	try {
    		System.out.print("\tEnter a user ID to search for: ");
         	String user = in.readLine();
-        	String query = String.format("SELECT userId, name, email FROM USR WHERE userID='%s'", user);  
-		print = true;
+        	String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);  
+
         	int get_user = esql.executeQuery(query);
         	if (get_user <= 0){
         		System.out.println("User not found. Try Again.");
                 	return;
-        	}
-		print = false;
-				
+        	} else {
+			profInfo = esql.fillProfile(query);
+			Profile prof = new Profile(profInfo);
+			prof.viewProfile();
+		}
+		
    	} catch (Exception e) {
 		System.err.println (e.getMessage ());
 	}
