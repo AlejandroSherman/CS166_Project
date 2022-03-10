@@ -378,7 +378,16 @@ public class ProfNetwork {
          int userNum = esql.executeQuery(query);
 	 if (userNum > 0)
 		return login;
-         return null;
+         String query2 = String.format("SELECT * FROM USR WHERE userId='%s'", login);
+         int get_user = esql.executeQuery(query2);
+         if (get_user <= 0){
+           System.out.println("User not found. Try Again.");
+           return null;
+         }
+         else{
+           System.out.println("Incorrect Password. Try Again.");
+           return null;
+         }
       }catch(Exception e){
          System.err.println (e.getMessage ());
          return null;
@@ -394,7 +403,7 @@ public class ProfNetwork {
       try{
          System.out.print("\tEnter user login to change password for: ");
          String login = in.readLine();
-         String query = String.format("SELECT * FROM USR WHERE userID='%s'", login);
+         String query = String.format("SELECT * FROM USR WHERE userId='%s'", login);
          int get_user = esql.executeQuery(query);
          if (get_user <= 0){
            System.out.println("User not found. Try Again.");
@@ -403,7 +412,7 @@ public class ProfNetwork {
          else{
            System.out.print("\tEnter current user password: ");
            String old_password = in.readLine();
-           String query2 = String.format("SELECT * FROM USR WHERE userID='%s' AND password='%s'", login, old_password);
+           String query2 = String.format("SELECT * FROM USR WHERE userId='%s' AND password='%s'", login, old_password);
            int verify = esql.executeQuery(query2);
            if (verify <= 0){
              System.out.println("Incorrect current Password. Try Again.");
@@ -416,7 +425,7 @@ public class ProfNetwork {
                 System.out.println("New password can't be empty. Try again.");
                 return;
              }
-             String query3 = String.format("UPDATE USR SET password='%s' WHERE userID='%s'", new_password, login);
+             String query3 = String.format("UPDATE USR SET password='%s' WHERE userId='%s'", new_password, login);
              esql.executeUpdate(query3);
              System.out.println("Successfully updated password.");
              return;
@@ -455,7 +464,7 @@ public class ProfNetwork {
                   System.out.println("Canceling.");
                   break;
                }
-               query = String.format("UPDATE USR SET name='%s' WHERE userID='%s'", name, authorisedUser);
+               query = String.format("UPDATE USR SET name='%s' WHERE userId='%s'", name, authorisedUser);
                esql.executeUpdate(query);
                System.out.println("Successfully updated Name.");
                break;
@@ -466,7 +475,7 @@ public class ProfNetwork {
                   System.out.println("Cancelling.");
                   break;
                }
-               query = String.format("UPDATE USR SET userID='%s' WHERE userID='%s'", login, authorisedUser);
+               query = String.format("UPDATE USR SET userId='%s' WHERE userId='%s'", login, authorisedUser);
                esql.executeUpdate(query);
                System.out.println("Successfully updated User Login.");
                break;
@@ -477,7 +486,7 @@ public class ProfNetwork {
                   System.out.println("Cancelling.");
                   break;
                }
-               query = String.format("UPDATE USR SET password='%s' WHERE userID='%s'", password, authorisedUser);
+               query = String.format("UPDATE USR SET password='%s' WHERE userId='%s'", password, authorisedUser);
                esql.executeUpdate(query);
                System.out.println("Successfully updated Password.");
                break;
@@ -488,7 +497,7 @@ public class ProfNetwork {
                   System.out.println("Cancelling.");
                   break;
                }
-               query = String.format("UPDATE USR SET email='%s' WHERE userID='%s'", email, authorisedUser);
+               query = String.format("UPDATE USR SET email='%s' WHERE userId='%s'", email, authorisedUser);
                esql.executeUpdate(query);
                System.out.println("Successfully updated Email.");
                break;
@@ -513,7 +522,7 @@ public class ProfNetwork {
                }
                String hold = year + '-' + month + '-' + day;
                Date dob = Date.valueOf(hold);//converting string into sql date
-               query = String.format("UPDATE USR SET dateOfBirth='%s' WHERE userID='%s'", dob, authorisedUser);
+               query = String.format("UPDATE USR SET dateOfBirth='%s' WHERE userId='%s'", dob, authorisedUser);
                esql.executeUpdate(query);
                System.out.println("Successfully updated Date Of Birth.");
                break;
@@ -534,13 +543,13 @@ public class ProfNetwork {
 
    public static void SendRequest(ProfNetwork esql, String authorisedUser){
      try{
-        System.out.print("\tEnter userID to send a request to: ");
+        System.out.print("\tEnter userId to send a request to: ");
         String sendToUser = in.readLine();
         if (sendToUser.length() == 0){
            System.out.println("Recipent can't be empty. Try again.");
            return;
         }
-        String query = String.format("SELECT * FROM USR WHERE userID='%s'", sendToUser);
+        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
         int get_user = esql.executeQuery(query);
         if (get_user <= 0){
           System.out.println("Recipent not found. Try Again.");
@@ -564,7 +573,7 @@ public class ProfNetwork {
 
    public static void SendRequestHelper(ProfNetwork esql, String authorisedUser, String sendToUser){ //Helper version of send request where the recipient is already known. Such as from the friendList
      try{
-        String query = String.format("SELECT * FROM USR WHERE userID='%s'", sendToUser);
+        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
         int get_user = esql.executeQuery(query);
         if (get_user <= 0){
           System.out.println("Recipent not found. Try Again.");
@@ -586,26 +595,72 @@ public class ProfNetwork {
      }
    }
 
-   public static void ViewRequests(ProfNetwork esql, String authorisedUser){ //For now just lists the incoming userID connections for testing purposes.
-     try{                                                                    //In the future a user should be able to accpet or reject any connections listed here
-        List<List<String>> get_requests = new ArrayList<List<String>>();
-        String status = "Request";
-        String query = String.format("SELECT userID FROM CONNECTION_USR WHERE connectionID='%s' AND status='%s'", authorisedUser, status);
-        get_requests = esql.executeQueryAndReturnResult(query);
-        if (get_requests.isEmpty()){
-          System.out.println("No incoming Requests found.");
-          return;
-        }
-        System.out.println("Here are the userIDs sending an incoming request");
-        for(int i = 0; i < get_requests.size(); i++){
-						System.out.println(get_requests.get(i).get(0));
-				}
-        System.out.println("Successfully displayed incoming requests.");
-     }
-     catch(Exception e){
-        System.err.println (e.getMessage ());
-        return;
-     }
+   public static void ViewRequests(ProfNetwork esql, String authorisedUser){
+      try{
+         boolean requestmenu = true;
+         while(requestmenu) {
+            System.out.println("CONNECTION REQUEST MENU");
+            System.out.println("---------");
+            System.out.println("1. View All Incoming Connection Requests");
+            System.out.println("2. Accept/Delete Connection Request");
+            System.out.println(".........................");
+            System.out.println("9. Exit Connection Menu");
+            switch (readChoice()){
+            case 1:
+               List<List<String>> get_requests = new ArrayList<List<String>>();
+               String status = "Request";
+               String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId='%s' AND status='%s'", authorisedUser, status);
+               get_requests = esql.executeQueryAndReturnResult(query);
+               if (get_requests.isEmpty()){
+                  System.out.println("No incoming Requests found.");
+               return;
+               }
+               System.out.println("Here are the userIds sending an incoming request");
+               for(int i = 0; i < get_requests.size(); i++){
+					 	      System.out.println(get_requests.get(i).get(0));
+				       }
+               System.out.println("Successfully displayed incoming requests.");
+               break;
+            case 2:
+               System.out.println("Enter userId of connection to Accept or Reject: ");
+               String connection = in.readLine();
+               String status2 = "Request";
+               String query2 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId='%s' AND connectionId='%s' AND status='%s'", connection, authorisedUser, status2);
+               int verify = esql.executeQuery(query2);
+               if (verify <= 0){
+                  System.out.println("Incomming request not found for that User. Try Again.");
+               break;
+               }
+               boolean acceptmenu = true;
+               while(acceptmenu){
+                  System.out.println("Accept/Reject MENU");
+                  System.out.println("---------");
+                  System.out.println("1. Accept current request");
+                  System.out.println("2. Delete current request");
+                  System.out.println(".........................");
+                  System.out.println("9. Cancel");
+                  switch (readChoice()){
+                  case 1:
+                     String query3 = String.format("UPDATE CONNECTION_USR SET status='Accept' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+                     esql.executeUpdate(query3);
+                     System.out.println("Successfully accepted connection request.");
+                     acceptmenu = false; break;
+                  case 2:
+                     String query4 = String.format("UPDATE CONNECTION_USR SET status='Reject' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+                     esql.executeUpdate(query4);
+                     System.out.println("Successfully rejected connection request.");
+                     acceptmenu = false; break;
+                  case 9: acceptmenu = false; break;
+                  default : System.out.println("Unrecognized choice!"); break;
+                  }
+               }
+            }
+         }
+      }
+      catch(Exception e){
+         System.err.println (e.getMessage ());
+         return;
+      }
    }
 
 }//end ProfNetwork
