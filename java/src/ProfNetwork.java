@@ -24,19 +24,20 @@ import java.util.List;
 import java.util.ArrayList;
 
 /* PROFILE CLASS */
-class Profile {
-	private static String userId;
-	private static String password;
-	private static String email;
-	private static String fullname;
-	private static String dateOfBirth;
+class Profile {	
+
+	public static String userId;
+	public static String password;
+	public static String email;
+	public static String fullname;
+	public static String dateOfBirth;
 
 	public static boolean active = false;
 
 	private static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
 	
-	Profile(String[] info){
+	Profile(String[] info) throws SQLException {
 		setId(info[1]);
 		setName(info[2]);
 		setEmail(info[3]);
@@ -49,7 +50,7 @@ class Profile {
 	public static void setEmail(String em) { email = em; }
 	public static void setBirth(String birth) { dateOfBirth = birth; }
 	public static void setActive(boolean x){ active = x; }
-
+/*
 	public static void viewProfile(){
 		while(active){
 			System.out.println(userId + "'s Profile");
@@ -88,6 +89,7 @@ class Profile {
       		} while (true);
       		return input;
    	}
+*/
 }
 
 /**
@@ -541,6 +543,37 @@ public class ProfNetwork {
 
    }
 
+   public static void viewProfile(Profile x, ProfNetwork esql, String query){
+	try{
+		profInfo = esql.fillProfile(query);
+                Profile prof = new Profile(profInfo);
+                prof.setActive(true);
+                while(x.active){
+                        System.out.println(x.userId + "'s Profile");
+                        System.out.println("---------");
+                        System.out.println("Name: " + x.fullname);
+                        System.out.println("Email: " + x.email);
+                        System.out.println("Birthday: " + x.dateOfBirth);
+                        System.out.println();
+                        System.out.println("Select an option:");
+                        System.out.println("1. Send a message");
+                        System.out.println("2. View friends list");
+                        System.out.println("3. Remove friend");
+                        System.out.println("9. Go back");
+
+                        switch (readChoice()){
+                                case 1: break;
+                                case 2: break;
+                                case 3: break;
+                                case 9: x.setActive(false); return;
+                                default : System.out.println("Unrecognized choice!"); break;
+                        }
+		} 
+	} catch (Exception e) {
+		System.err.println (e.getMessage ());
+	}
+    }
+
    public static void SearchUser(ProfNetwork esql){
 	try {
    		System.out.print("\tEnter a user ID to search for: ");
@@ -554,7 +587,8 @@ public class ProfNetwork {
         	} else {
 			profInfo = esql.fillProfile(query);
 			Profile prof = new Profile(profInfo);
-			prof.viewProfile();
+			prof.setActive(true);
+			esql.viewProfile(prof, esql, query);
 		}
 		
    	} catch (Exception e) {
