@@ -10,7 +10,6 @@
  *
  */
 
-
 import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -25,6 +24,26 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
 
+/* PROFILE CLASS */
+class Profile {	
+	public static String userId;
+	public static String password;
+	public static String email;
+	public static String fullname;
+	public static String dateOfBirth;
+	public static boolean active = false;
+  
+  //Might use later
+	Profile() {}
+  
+	public static void setId(String id) { userId = id; }
+	public static void setName(String name) { fullname = name; }
+	public static void setPass(String pwd) { password = pwd; }
+	public static void setEmail(String em) { email = em; }
+	public static void setBirth(String birth) { dateOfBirth = birth; }
+	public static void setActive(boolean x){ active = x; } 
+}
+
 /**
  * This class defines a simple embedded SQL utility class that is designed to
  * work with PostgreSQL JDBC drivers.
@@ -34,12 +53,13 @@ public class ProfNetwork {
 
    // reference to physical database connection.
    private Connection _connection = null;
-
+   
    // handling the keyboard inputs through a BufferedReader
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
-
+   static boolean print = false;
+ 
    /**
     * Creates a new instance of ProfNetwork
     *
@@ -100,7 +120,6 @@ public class ProfNetwork {
 
       // issues the query instruction
       ResultSet rs = stmt.executeQuery (query);
-
       /*
        ** obtains the metadata object for the returned result set.  The metadata
        ** contains row and column info.
@@ -119,15 +138,18 @@ public class ProfNetwork {
 	    System.out.println();
 	    outputHeader = false;
 	 }
-         for (int i=1; i<=numCol; ++i)
+         for (int i=1; i<=numCol; ++i){
             System.out.print (rs.getString (i) + "\t");
-         System.out.println ();
-         ++rowCount;
-      }//end while
-      stmt.close ();
-      return rowCount;
-   }//end executeQuery
-
+            System.out.println ();
+	 
+            ++rowCount;
+	
+         }//end while
+      }
+	stmt.close ();
+	return rowCount;
+  }
+  
    /**
     * Method to execute an input query SQL instruction (i.e. SELECT).  This
     * method issues the query to the DBMS and returns the results as
@@ -173,10 +195,11 @@ public class ProfNetwork {
     * @return the number of rows returned
     * @throws java.sql.SQLException when failed to execute the query
     */
+
    public int executeQuery (String query) throws SQLException {
        // creates a statement object
        Statement stmt = this._connection.createStatement ();
-
+       
        // issues the query instruction
        ResultSet rs = stmt.executeQuery (query);
 
@@ -274,6 +297,7 @@ public class ProfNetwork {
                 System.out.println("2. Update Profile");
                 System.out.println("3. Write a new message");
                 System.out.println("4. Send Friend Request");
+		            System.out.println("5. Search for a user");
                 System.out.println("7. View Incoming Connection Requests");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
@@ -281,6 +305,7 @@ public class ProfNetwork {
                    case 1: FriendList(esql); break;
                    case 2: UpdateProfile(esql, authorisedUser); break;
                    case 3: NewMessage(esql); break;
+		               case 5: SearchUser(esql); break;
                    case 4: SendRequest(esql, authorisedUser); break;
                    case 7: ViewRequests(esql, authorisedUser); break;
                    case 9: usermenu = false; break;
@@ -663,4 +688,62 @@ public class ProfNetwork {
       }
    }
 
+   public static void SearchUser(ProfNetwork esql){
+	  try {
+   		     System.out.print("\tEnter a user ID to search for: ");
+        	 String user = in.readLine();
+        	 String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);  
+
+        	 int get_user = esql.executeQuery(query);
+        	 if (get_user <= 0){
+        		     System.out.println("User not found. Try Again.");
+                return;
+        	 } else {
+         		     esql.ViewProfile(query);       
+		       }
+   	 } catch (Exception e) {
+		       System.err.println (e.getMessage ());
+	   }
+  }
+
+   public void ViewProfile(String query){
+   	try {
+        	Statement stmt = this._connection.createStatement ();
+        	ResultSet rs = stmt.executeQuery (query);
+        	String [] rows = {"", "User ID", "Name", "Email", "DOB"};
+        	ResultSetMetaData rsmd = rs.getMetaData ();
+        	int numCol = rsmd.getColumnCount ();
+        	boolean outputHeader = true;
+        	while (rs.next()){
+                	for (int i=1; i<=numCol; ++i){
+				if (i == 1){
+					System.out.println();
+					System.out.println(rs.getString(i) + "'s PROFILE");
+                			System.out.println("---------");
+				} 
+                        	System.out.print (rows[i] + ": " + rs.getString (i) + "\t");
+                        	System.out.println ();
+                	}
+        	}
+        	stmt.close ();
+		System.out.println();
+        	System.out.println("1. Send a message");
+        	System.out.println("2. View friends list");
+		//This needs to be changed depending on if you're friends or not.
+		System.out.println("3. Add friend");
+        	//System.out.println("3. Remove friend");
+		System.out.println(".........................");
+        	System.out.println("9. Go back");
+
+        	switch (readChoice()){
+        		case 1: break;
+                	case 2: break;
+                	case 3: break;
+                	case 9: return;
+                	default : System.out.println("Unrecognized choice!"); break;
+        	}
+  	} catch (Exception e) {
+		System.err.println (e.getMessage ());
+    	}
+   }
 }//end ProfNetwork
