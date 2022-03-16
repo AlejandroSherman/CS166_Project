@@ -17,6 +17,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -25,23 +26,23 @@ import java.util.List;
 import java.util.ArrayList;
 
 /* PROFILE CLASS */
-class Profile {	
+class Profile {
 	public static String userId;
 	public static String password;
 	public static String email;
 	public static String fullname;
 	public static String dateOfBirth;
 	public static boolean active = false;
-  
+
   //Might use later
 	Profile() {}
-  
+
 	public static void setId(String id) { userId = id; }
 	public static void setName(String name) { fullname = name; }
 	public static void setPass(String pwd) { password = pwd; }
 	public static void setEmail(String em) { email = em; }
 	public static void setBirth(String birth) { dateOfBirth = birth; }
-	public static void setActive(boolean x){ active = x; } 
+	public static void setActive(boolean x){ active = x; }
 }
 
 /**
@@ -53,13 +54,13 @@ public class ProfNetwork {
 
    // reference to physical database connection.
    private Connection _connection = null;
-   
+
    // handling the keyboard inputs through a BufferedReader
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
    static boolean print = false;
- 
+
    /**
     * Creates a new instance of ProfNetwork
     *
@@ -141,15 +142,15 @@ public class ProfNetwork {
          for (int i=1; i<=numCol; ++i){
             System.out.print (rs.getString (i) + "\t");
             System.out.println ();
-	 
+
             ++rowCount;
-	
+
          }//end while
       }
 	stmt.close ();
 	return rowCount;
   }
-  
+
    /**
     * Method to execute an input query SQL instruction (i.e. SELECT).  This
     * method issues the query to the DBMS and returns the results as
@@ -199,7 +200,7 @@ public class ProfNetwork {
    public int executeQuery (String query) throws SQLException {
        // creates a statement object
        Statement stmt = this._connection.createStatement ();
-       
+
        // issues the query instruction
        ResultSet rs = stmt.executeQuery (query);
 
@@ -299,15 +300,17 @@ public class ProfNetwork {
                 System.out.println("4. Send Friend Request");
 		            System.out.println("5. Search for a user");
                 System.out.println("7. View Incoming Connection Requests");
+                System.out.println("8. View Messages");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
                    case 1: FriendList(esql); break;
                    case 2: UpdateProfile(esql, authorisedUser); break;
-                   case 3: NewMessage(esql); break;
+                   case 3: NewMessage(esql, authorisedUser); break;
 		               case 5: SearchUser(esql); break;
                    case 4: SendRequest(esql, authorisedUser); break;
                    case 7: ViewRequests(esql, authorisedUser); break;
+                   case 8: ViewMessages(esql, authorisedUser); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
                 }
@@ -562,8 +565,233 @@ public class ProfNetwork {
      }
    }
 
-   public static void NewMessage(ProfNetwork esql){
+   public static void NewMessage(ProfNetwork esql, String authorisedUser){
+     try{
+        System.out.print("\tEnter userId to send a message to: ");
+        String sendToUser = in.readLine();
+        if (sendToUser.length() == 0){
+           System.out.println("Recipent can't be empty. Try again.");
+           return;
+        }
+        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
+        int get_user = esql.executeQuery(query);
+        if (get_user <= 0){
+          System.out.println("Recipent not found. Try Again.");
+          return;
+        }
+        System.out.print("\tEnter the message to send: ");
+		  	String message = esql.in.readLine();
 
+        //Date date = new Date();
+        //Timestamp ts=new Timestamp(date.getTime());
+        Timestamp ts = new Timestamp(System.currentTimeMillis());
+        String delete_status = "0";
+        String status = "Delivered";
+        String query2 = String.format("INSERT INTO MESSAGE (senderId, receiverId, contents, sendTime, deleteStatus, status) VALUES ('%s','%s','%s', '%s','%s','%s')", authorisedUser, sendToUser, message, ts, delete_status, status);
+        esql.executeUpdate(query2);
+        System.out.println("Successfully sent message.");
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
+   }
+
+   public static void NewMessageHelper(ProfNetwork esql, String authorisedUser, String sendToUser){ //Helper version of send request where the recipient is already known. Such as from the friendList
+     try{
+        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
+        int get_user = esql.executeQuery(query);
+        if (get_user <= 0){
+          System.out.println("Recipent not found. Try Again.");
+          return;
+        }
+        System.out.print("\tEnter the message to send: ");
+		  	String message = esql.in.readLine();
+
+        //Date date = new Date();
+        //Timestamp ts=new Timestamp(date.getTime());
+        Timestamp ts = new Timestamp(System.currentTimeMillis());
+        String delete_status = "0";
+        String status = "Delivered";
+        String query2 = String.format("INSERT INTO MESSAGE (senderId, receiverId, contents, sendTime, deleteStatus, status) VALUES ('%s','%s','%s', '%s','%s','%s')", authorisedUser, sendToUser, message, ts, delete_status, status);
+        esql.executeUpdate(query2);
+        System.out.println("Successfully sent message.");
+     }
+     catch(Exception e){
+        System.err.println (e.getMessage ());
+        return;
+     }
+   }
+
+   public static void ViewMessages(ProfNetwork esql, String authorisedUser){
+      try{
+         boolean messagemenu = true;
+         while(messagemenu) {
+            System.out.println("MESSAGE MENU");
+            System.out.println("---------");
+            System.out.println("1. View Sent Messages");
+            System.out.println("2. View Received Messages");
+            System.out.println(".........................");
+            System.out.println("9. Exit Message Menu");
+            switch (readChoice()){
+            case 1:
+               boolean sentmenu = true;
+               while(sentmenu){
+                  System.out.println("Sent Messages Menu");
+                  System.out.println("---------");
+                  System.out.println("1. List All Sent Messages");
+                  System.out.println("2. See Contents of Message");
+                  System.out.println("3. Delete Message");
+                  System.out.println(".........................");
+                  System.out.println("9. Exit Sent Messages Menu");
+                  switch (readChoice()){
+                  case 1:
+                     String delete_status1 = "0"; //Neither have deleted the message
+                     String delete_status2 = "2"; //The recipient has deleted the message
+                     String query = String.format("SELECT msgId, receiverId, sendTime, status FROM MESSAGE WHERE senderId='%s' AND (deleteStatus='%s' OR deleteStatus='%s')", authorisedUser, delete_status1, delete_status2);
+                     int verify = esql.executeQueryAndPrintResult(query);
+                     if(verify < 1){
+                        System.out.println("No sent messages found.");
+                        sentmenu = false; break;
+                     }
+                     break;
+                  case 2:
+                     System.out.println("Enter the integer MsgId of Message to see the contents: ");
+                     String mes_id_str = in.readLine();
+                     int mes_id_int = Integer.parseInt(mes_id_str.trim());
+                     System.out.print("\nMessage Contents: ");
+					           String query2 = String.format("SELECT contents FROM MESSAGE WHERE msgId='%s' AND senderId='%s'", mes_id_int, authorisedUser);
+                     int verify2 = esql.executeQueryAndPrintResult(query2);
+                     if(verify2 < 1){
+                        System.out.println("No sent message with that ID found.");
+                        break;
+                     }
+                     break;
+                  case 3:
+                     System.out.println("Enter the integer MsgId of Message to delete: ");
+                     String mes_id_str2 = in.readLine();
+                     int mes_id_int2 = Integer.parseInt(mes_id_str2.trim());
+                     String query3 = String.format("SELECT deleteStatus FROM MESSAGE WHERE msgId='%s' AND senderId='%s'", mes_id_int2, authorisedUser);
+                     List<List<String>> get_message_status = new ArrayList<List<String>>();
+                     get_message_status = esql.executeQueryAndReturnResult(query3);
+                     if (get_message_status.isEmpty()){
+                        System.out.println("No sent message with that ID available to delete.");
+                        break;
+                     }
+                     else if(get_message_status.get(0).get(0).equals("0")){ //Neither have deleted the message
+                        String delete_status3 = "1";
+							          String query4 = String.format("UPDATE MESSAGE set deleteStatus='%s' WHERE msgId='%s'", delete_status3, mes_id_int2);
+							          esql.executeUpdate(query4); //Set that only the sender has deleted the message
+                        System.out.println("Message Successfully deleted.");
+						         }
+                     else if (get_message_status.get(0).get(0).equals("2")) { //The recipient has already deleted the message
+                       String delete_status4 = "3";
+                       String query5 = String.format("UPDATE MESSAGE set deleteStatus='%s' WHERE msgId='%s'", delete_status4, mes_id_int2);
+                       esql.executeUpdate(query5); //Set that both have deleted the message
+                       System.out.println("Message Successfully deleted.");
+                     }
+                     else{
+                       System.out.println("No sent message with that ID available to delete.");
+                       break;
+                     }
+                     break;
+                  case 9: sentmenu = false; break;
+                  default : System.out.println("Unrecognized choice!"); break;
+                  }
+               }
+               break;
+            case 2:
+                boolean receivemenu = true;
+                while(receivemenu){
+                  System.out.println("Recieved Messages Menu");
+                  System.out.println("---------");
+                  System.out.println("1. List All Unread Messages");
+                  System.out.println("2. See Contents of Message");
+                  System.out.println("3. List all Received Messages");
+                  System.out.println("4. Delete Message");
+                  System.out.println(".........................");
+                  System.out.println("9. Exit Received Messages Menu");
+                  switch (readChoice()){
+                  case 1:
+                    String delete_statusb1 = "0"; //Neither have deleted the message
+                    String delete_statusb2 = "1"; //The sender has deleted the message
+                    String statusb = "Delivered";
+                    String queryb = String.format("SELECT msgId, senderId, sendTime FROM MESSAGE WHERE receiverId='%s' AND status='%s' AND (deleteStatus='%s' OR deleteStatus='%s')", authorisedUser, statusb, delete_statusb1, delete_statusb2);
+                    int verifyb = esql.executeQueryAndPrintResult(queryb);
+                    if(verifyb < 1){
+                      System.out.println("No new unread messages found.");
+                      break;
+                    }
+                    break;
+                  case 2:
+                    System.out.println("Enter the integer MsgId of Message to see the contents: ");
+                    String mes_id_strb = in.readLine();
+                    int mes_id_intb = Integer.parseInt(mes_id_strb.trim());
+                    System.out.print("\nMessage Contents: ");
+   					        String query2b = String.format("SELECT contents FROM MESSAGE WHERE msgId='%s' AND receiverId='%s'", mes_id_intb, authorisedUser);
+                    int verify2b = esql.executeQueryAndPrintResult(query2b);
+                    if(verify2b < 1){
+                      System.out.println("No recieved message with that ID found.");
+                      break;
+                    }
+                    String read = "Read";
+                    String query9 = String.format("UPDATE MESSAGE SET status='%s' WHERE msgId = '%s'", read, mes_id_intb); //The message was just read by the recipient
+					        	esql.executeUpdate(query9);
+                    System.out.println("Setting current message to read.");
+                    break;
+                  case 3:
+                    String delete_statusb9 = "0"; //Neither have deleted the message
+                    String delete_statusb10 = "1"; //The sender has deleted the message
+                    String status9b = "Read";
+                    String status10b = "Delivered";
+                    String query9b = String.format("SELECT msgId, senderId, sendTime FROM MESSAGE WHERE receiverId='%s' AND (status='%s' OR status='%s') AND (deleteStatus='%s' OR deleteStatus='%s')", authorisedUser, status9b, status10b, delete_statusb9, delete_statusb10);
+                    int verify9b = esql.executeQueryAndPrintResult(query9b);
+                    if(verify9b < 1){
+                      System.out.println("No non deleted messages found.");
+                      break;
+                    }
+                    break;
+                  case 4:
+                    System.out.println("Enter the integer MsgId of Message to delete: ");
+                    String mes_id_strb2 = in.readLine();
+                    int mes_id_intb2 = Integer.parseInt(mes_id_strb2.trim());
+                    String queryb3 = String.format("SELECT deleteStatus FROM MESSAGE WHERE msgId='%s' AND receiverId='%s'", mes_id_intb2, authorisedUser);
+                    List<List<String>> get_message_statusb = new ArrayList<List<String>>();
+                    get_message_statusb = esql.executeQueryAndReturnResult(queryb3);
+                    if (get_message_statusb.isEmpty()){
+                      System.out.println("No recieved message with that ID available to delete.");
+                      break;
+                    }
+                    else if(get_message_statusb.get(0).get(0).equals("0")){ //Neither have deleted the message
+                      String delete_status3b = "2";
+   							      String query4b = String.format("UPDATE MESSAGE set deleteStatus='%s' WHERE msgId='%s'", delete_status3b, mes_id_intb2);
+   							      esql.executeUpdate(query4b); //Set that only the recipient has deleted the message
+                      System.out.println("Message Successfully deleted.");
+   						      }
+                    else if (get_message_statusb.get(0).get(0).equals("1")) { //The sender has already deleted the message
+                      String delete_status4b = "3";
+                      String query5b = String.format("UPDATE MESSAGE set deleteStatus='%s' WHERE msgId='%s'", delete_status4b, mes_id_intb2);
+                      esql.executeUpdate(query5b); //Set that both have deleted the message
+                    }
+                    else{
+                      System.out.println("No sent message with that ID available to delete.");
+                      break;
+                    }
+                    break;
+                  case 9: receivemenu = false; break;
+                  default : System.out.println("Unrecognized choice!"); break;
+                  }
+                }
+                break;
+            case 9: messagemenu = false; break;
+            default : System.out.println("Unrecognized choice!"); break;
+            }
+         }
+      }
+      catch(Exception e){
+         System.err.println (e.getMessage ());
+         return;
+      }
    }
 
    public static void SendRequest(ProfNetwork esql, String authorisedUser){
@@ -679,6 +907,8 @@ public class ProfNetwork {
                   default : System.out.println("Unrecognized choice!"); break;
                   }
                }
+            case 9: requestmenu = false; break;
+            default : System.out.println("Unrecognized choice!"); break;
             }
          }
       }
@@ -692,14 +922,14 @@ public class ProfNetwork {
 	  try {
    		     System.out.print("\tEnter a user ID to search for: ");
         	 String user = in.readLine();
-        	 String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);  
+        	 String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);
 
         	 int get_user = esql.executeQuery(query);
         	 if (get_user <= 0){
         		     System.out.println("User not found. Try Again.");
                 return;
         	 } else {
-         		     esql.ViewProfile(query);       
+         		     esql.ViewProfile(query);
 		       }
    	 } catch (Exception e) {
 		       System.err.println (e.getMessage ());
@@ -720,7 +950,7 @@ public class ProfNetwork {
 					System.out.println();
 					System.out.println(rs.getString(i) + "'s PROFILE");
                 			System.out.println("---------");
-				} 
+				}
                         	System.out.print (rows[i] + ": " + rs.getString (i) + "\t");
                         	System.out.println ();
                 	}
