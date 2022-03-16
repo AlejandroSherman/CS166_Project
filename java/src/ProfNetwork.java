@@ -298,16 +298,16 @@ public class ProfNetwork {
                 System.out.println("2. Update Profile");
                 System.out.println("3. Write a new message");
                 System.out.println("4. Send Friend Request");
-		            System.out.println("5. Search for a user");
+		System.out.println("5. Search for a user");
                 System.out.println("7. View Incoming Connection Requests");
                 System.out.println("8. View Messages");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
-                   case 1: FriendList(esql); break;
+                   case 1: FriendList(esql, authorisedUser); break;
                    case 2: UpdateProfile(esql, authorisedUser); break;
                    case 3: NewMessage(esql, authorisedUser); break;
-		               case 5: SearchUser(esql); break;
+		   case 5: SearchUser(esql); break;
                    case 4: SendRequest(esql, authorisedUser); break;
                    case 7: ViewRequests(esql, authorisedUser); break;
                    case 8: ViewMessages(esql, authorisedUser); break;
@@ -465,8 +465,35 @@ public class ProfNetwork {
       }
    }//end
 
-   public static void FriendList(ProfNetwork esql){
+   public static void FriendList(ProfNetwork esql, String user){
+	try {
+		String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s'", user);
+		List<List<String>> friends = new ArrayList<List<String>>();
+		friends = esql.executeQueryAndReturnResult(query);
+		if (friends.isEmpty()){
+			System.out.println("This user has no friends");
+			return;
+		}
+		System.out.println();
+                System.out.println("FRIENDS LIST");
+                System.out.println("---------");
 
+		for (int i = 0; i < friends.size(); i++) { System.out.println(friends.get(i).get(0)); }
+		
+		System.out.println();
+                System.out.println("1. Go to profile");
+		System.out.println("2. Delete friend");
+		System.out.println(".........................");
+		System.out.println("9. Go back");
+
+		switch (readChoice()){
+        		case 1: esql.SearchUser(esql); break;
+                	case 2:	break;
+                	case 3: break;
+                	case 9: return;
+                	default : System.out.println("Unrecognized choice!"); break;
+        	}
+	} catch (Exception e) { System.err.println (e.getMessage()); }
    }
 
    public static void UpdateProfile(ProfNetwork esql, String authorisedUser){
@@ -799,13 +826,13 @@ public class ProfNetwork {
         System.out.print("\tEnter userId to send a request to: ");
         String sendToUser = in.readLine();
         if (sendToUser.length() == 0){
-           System.out.println("Recipent can't be empty. Try again.");
+           System.out.println("Recipient can't be empty. Try again.");
            return;
         }
         String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
         int get_user = esql.executeQuery(query);
         if (get_user <= 0){
-          System.out.println("Recipent not found. Try Again.");
+          System.out.println("Recipient not found. Try Again.");
           return;
         }
         //Here add some sort of connection level check? It checks the friend list? Not sure about that part
@@ -829,7 +856,7 @@ public class ProfNetwork {
         String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
         int get_user = esql.executeQuery(query);
         if (get_user <= 0){
-          System.out.println("Recipent not found. Try Again.");
+          System.out.println("Recipient not found. Try Again.");
           return;
         }
         //Here add some sort of connection level check? It checks the friend list? Not sure about that part
@@ -929,14 +956,14 @@ public class ProfNetwork {
         		     System.out.println("User not found. Try Again.");
                 return;
         	 } else {
-         		     esql.ViewProfile(query);
+         		     esql.ViewProfile(esql, query);
 		       }
    	 } catch (Exception e) {
 		       System.err.println (e.getMessage ());
 	   }
   }
 
-   public void ViewProfile(String query){
+   public void ViewProfile(ProfNetwork esql, String query){
    	try {
         	Statement stmt = this._connection.createStatement ();
         	ResultSet rs = stmt.executeQuery (query);
@@ -944,13 +971,15 @@ public class ProfNetwork {
         	ResultSetMetaData rsmd = rs.getMetaData ();
         	int numCol = rsmd.getColumnCount ();
         	boolean outputHeader = true;
+		String username = "";
         	while (rs.next()){
                 	for (int i=1; i<=numCol; ++i){
 				if (i == 1){
+					username = rs.getString(i);
 					System.out.println();
-					System.out.println(rs.getString(i) + "'s PROFILE");
+					System.out.println(username + "'s PROFILE");
                 			System.out.println("---------");
-				}
+				} 
                         	System.out.print (rows[i] + ": " + rs.getString (i) + "\t");
                         	System.out.println ();
                 	}
@@ -967,7 +996,7 @@ public class ProfNetwork {
 
         	switch (readChoice()){
         		case 1: break;
-                	case 2: break;
+                	case 2: FriendList(esql, username); break;
                 	case 3: break;
                 	case 9: return;
                 	default : System.out.println("Unrecognized choice!"); break;
