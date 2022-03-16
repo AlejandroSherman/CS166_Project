@@ -34,7 +34,7 @@ CREATE TABLE EDUCATIONAL_DETAILS(
   FOREIGN KEY(userId) REFERENCES USR(userId));
 
 CREATE TABLE MESSAGE(
-	msgId integer UNIQUE NOT NULL,
+	msgId integer NOT NULL DEFAULT nextval('msgID_Seq'),
 	senderId char(30) NOT NULL,
 	receiverId char(30) NOT NULL,
 	contents char(500) NOT NULL,
