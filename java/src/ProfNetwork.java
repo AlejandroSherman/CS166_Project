@@ -59,7 +59,7 @@ public class ProfNetwork {
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
-   static boolean print = false;
+   public static String authorisedUser = null;
 
    /**
     * Creates a new instance of ProfNetwork
@@ -281,7 +281,7 @@ public class ProfNetwork {
             System.out.println("2. Log in");
             System.out.println("3. Change a user password");
             System.out.println("9. < EXIT");
-            String authorisedUser = null;
+   //         String authorisedUser = null;
             switch (readChoice()){
                case 1: CreateUser(esql); break;
                case 2: authorisedUser = LogIn(esql); break;
@@ -467,7 +467,7 @@ public class ProfNetwork {
 
    public static void FriendList(ProfNetwork esql, String user){
 	try {
-		String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s'", user);
+		String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", user);
 		List<List<String>> friends = new ArrayList<List<String>>();
 		friends = esql.executeQueryAndReturnResult(query);
 		if (friends.isEmpty()){
@@ -488,7 +488,10 @@ public class ProfNetwork {
 
 		switch (readChoice()){
         		case 1: esql.SearchUser(esql); break;
-                	case 2:	break;
+                	case 2:	
+				
+
+				break;
                 	case 3: break;
                 	case 9: return;
                 	default : System.out.println("Unrecognized choice!"); break;
@@ -947,7 +950,7 @@ public class ProfNetwork {
 
    public static void SearchUser(ProfNetwork esql){
 	  try {
-   		     System.out.print("\tEnter a user ID to search for: ");
+   		 System.out.print("\tEnter a user ID to search for: ");
         	 String user = in.readLine();
         	 String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);
 
@@ -995,9 +998,9 @@ public class ProfNetwork {
         	System.out.println("9. Go back");
 
         	switch (readChoice()){
-        		case 1: break;
+        		case 1: NewMessageHelper(esql, authorisedUser, username); break;
                 	case 2: FriendList(esql, username); break;
-                	case 3: break;
+                	case 3: SendRequestHelper(esql, authorisedUser, username); break;
                 	case 9: return;
                 	default : System.out.println("Unrecognized choice!"); break;
         	}
