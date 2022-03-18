@@ -911,7 +911,7 @@ public class ProfNetwork {
                String query2 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId='%s' AND connectionId='%s' AND status='%s'", connection, authorisedUser, status2);
                int verify = esql.executeQuery(query2);
                if (verify <= 0){
-                  System.out.println("Incomming request not found for that User. Try Again.");
+                  System.out.println("Incoming request not found for that User. Try Again.");
                break;
                }
                boolean acceptmenu = true;
@@ -925,7 +925,9 @@ public class ProfNetwork {
                   switch (readChoice()){
                   case 1:
                      String query3 = String.format("UPDATE CONNECTION_USR SET status='Accept' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+		     String query5 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','Accept')", authorisedUser, connection);
                      esql.executeUpdate(query3);
+		     esql.executeUpdate(query5);
                      System.out.println("Successfully accepted connection request.");
                      acceptmenu = false; break;
                   case 2:
