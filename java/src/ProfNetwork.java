@@ -25,26 +25,6 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
 
-/* PROFILE CLASS */
-class Profile {
-	public static String userId;
-	public static String password;
-	public static String email;
-	public static String fullname;
-	public static String dateOfBirth;
-	public static boolean active = false;
-
-  //Might use later
-	Profile() {}
-
-	public static void setId(String id) { userId = id; }
-	public static void setName(String name) { fullname = name; }
-	public static void setPass(String pwd) { password = pwd; }
-	public static void setEmail(String em) { email = em; }
-	public static void setBirth(String birth) { dateOfBirth = birth; }
-	public static void setActive(boolean x){ active = x; }
-}
-
 /**
  * This class defines a simple embedded SQL utility class that is designed to
  * work with PostgreSQL JDBC drivers.
@@ -59,8 +39,8 @@ public class ProfNetwork {
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
-   static boolean print = false;
-
+   public static String authorisedUser = null;
+   public static int connection_level = 0;
    /**
     * Creates a new instance of ProfNetwork
     *
@@ -272,6 +252,7 @@ public class ProfNetwork {
          String user = args[2];
          esql = new ProfNetwork (dbname, dbport, user, "");
 
+	
          boolean keepon = true;
          while(keepon) {
             // These are sample SQL statements
@@ -281,7 +262,7 @@ public class ProfNetwork {
             System.out.println("2. Log in");
             System.out.println("3. Change a user password");
             System.out.println("9. < EXIT");
-            String authorisedUser = null;
+   //         String authorisedUser = null;
             switch (readChoice()){
                case 1: CreateUser(esql); break;
                case 2: authorisedUser = LogIn(esql); break;
@@ -298,16 +279,20 @@ public class ProfNetwork {
                 System.out.println("2. Update Profile");
                 System.out.println("3. Write a new message");
                 System.out.println("4. Send Friend Request");
-		            System.out.println("5. Search for a user");
+		System.out.println("5. Search for a user");
                 System.out.println("7. View Incoming Connection Requests");
                 System.out.println("8. View Messages");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
+		System.out.println();
+		connection_level = 0;
+                System.out.println("Connection Level: " + connection_level);
+		System.out.println();
                 switch (readChoice()){
-                   case 1: FriendList(esql); break;
+                   case 1: FriendList(esql, authorisedUser); break;
                    case 2: UpdateProfile(esql, authorisedUser); break;
                    case 3: NewMessage(esql, authorisedUser); break;
-		               case 5: SearchUser(esql); break;
+		   case 5: SearchUser(esql); break;
                    case 4: SendRequest(esql, authorisedUser); break;
                    case 7: ViewRequests(esql, authorisedUser); break;
                    case 8: ViewMessages(esql, authorisedUser); break;
@@ -465,8 +450,70 @@ public class ProfNetwork {
       }
    }//end
 
-   public static void FriendList(ProfNetwork esql){
+   public static void DeleteFriend(ProfNetwork esql){
+	boolean deletemenu = true;
+	while (deletemenu){
+		try {
+   			System.out.print("\tEnter userId to remove: ");
+        		String userToDelete = in.readLine();
 
+        		if (userToDelete.length() == 0){
+        			System.out.println("Invalid. Try again.");
+        	        	return;
+        		}
+
+        		String query2 = String.format("SELECT * FROM USR WHERE userId='%s'", userToDelete);
+        		int get_user = esql.executeQuery(query2);
+        		if (get_user <= 0){
+        			System.out.println("User not found. Try Again.");
+        	        	return;
+        		}
+
+        		String status = "Reject";
+        		String query3 = String.format("DELETE FROM CONNECTION_USR WHERE status='Accept' AND userId='%s' AND connectionId='%s'", userToDelete, authorisedUser);
+        		String query4 = String.format("DELETE FROM CONNECTION_USR WHERE status='Accept' AND userId='%s' AND connectionId='%s'", authorisedUser, userToDelete);
+        		esql.executeUpdate(query3);
+        		esql.executeUpdate(query4);
+        		System.out.println();
+        		String output = String.format("%s has been removed from your friends list", userToDelete);
+        		System.out.println(output);
+        		System.out.println(".........................");
+			deletemenu = false;
+		} catch (Exception e) { System.err.println (e.getMessage ()); }
+	}
+   }
+   public static void FriendList(ProfNetwork esql, String user){
+	try {  
+		String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", user);
+		List<List<String>> friends = new ArrayList<List<String>>();
+		friends = esql.executeQueryAndReturnResult(query);
+		if (friends.isEmpty()){
+			System.out.println();
+			System.out.println("This user has no friends");
+			System.out.println();
+			return;
+		}
+		System.out.println();
+                System.out.println("FRIENDS LIST");
+                System.out.println("---------");
+
+		for (int i = 0; i < friends.size(); i++) { System.out.println(friends.get(i).get(0)); }
+		
+		System.out.println();
+                System.out.println("1. Search a user");
+		if (user == authorisedUser){
+			System.out.println("2. Delete friend");
+		}
+		System.out.println(".........................");
+		System.out.println("9. Go back");
+
+		switch (readChoice()){
+        		case 1: esql.SearchUser(esql); break;
+                	case 2:	esql.DeleteFriend(esql); break;
+                	case 9: return;
+                	default : System.out.println("Unrecognized choice!"); break;
+        	}
+	} catch (Exception e) { System.err.println (e.getMessage()); }
    }
 
    public static void UpdateProfile(ProfNetwork esql, String authorisedUser){
@@ -731,7 +778,7 @@ public class ProfNetwork {
    					        String query2b = String.format("SELECT contents FROM MESSAGE WHERE msgId='%s' AND receiverId='%s'", mes_id_intb, authorisedUser);
                     int verify2b = esql.executeQueryAndPrintResult(query2b);
                     if(verify2b < 1){
-                      System.out.println("No recieved message with that ID found.");
+                      System.out.println("No received message with that ID found.");
                       break;
                     }
                     String read = "Read";
@@ -759,7 +806,7 @@ public class ProfNetwork {
                     List<List<String>> get_message_statusb = new ArrayList<List<String>>();
                     get_message_statusb = esql.executeQueryAndReturnResult(queryb3);
                     if (get_message_statusb.isEmpty()){
-                      System.out.println("No recieved message with that ID available to delete.");
+                      System.out.println("No received message with that ID available to delete.");
                       break;
                     }
                     else if(get_message_statusb.get(0).get(0).equals("0")){ //Neither have deleted the message
@@ -795,57 +842,67 @@ public class ProfNetwork {
    }
 
    public static void SendRequest(ProfNetwork esql, String authorisedUser){
-     try{
-        System.out.print("\tEnter userId to send a request to: ");
-        String sendToUser = in.readLine();
-        if (sendToUser.length() == 0){
-           System.out.println("Recipent can't be empty. Try again.");
-           return;
-        }
-        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
-        int get_user = esql.executeQuery(query);
-        if (get_user <= 0){
-          System.out.println("Recipent not found. Try Again.");
-          return;
-        }
-        //Here add some sort of connection level check? It checks the friend list? Not sure about that part
-        //if (connection_level > 3){
-        //  System.out.println("Recipient out of connection bounds");
-        //  return;
-        //}
-        String status = "Request";
-        String query2 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','%s')", authorisedUser, sendToUser, status);
-				esql.executeUpdate(query2);
-        System.out.println("Successfully sent connection request.");
-     }
-     catch(Exception e){
-        System.err.println (e.getMessage ());
-        return;
-     }
+	try {
+		String query3 = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", authorisedUser);	
+		int friend_count = esql.executeQuery(query3);
+		String sendToUser = "";
+	
+		if (friend_count == 0){
+			if (connection_level < 4){	
+                                System.out.print("\tEnter userId to send a request to: ");
+                                sendToUser = in.readLine();
+                                if (sendToUser.length() == 0){
+                                	System.out.println("Recipient can't be empty. Try again.");
+                                	return;
+				}
+			} else { System.out.println("You have reached the maximum connection level\n"); return; } 	
+		} else if (friend_count > 0){
+			if (connection_level < 6){
+                           	System.out.print("\tEnter userId to send a request to: ");
+                                sendToUser = in.readLine();
+                                if (sendToUser.length() == 0){
+                                	System.out.println("Recipient can't be empty. Try again.");
+                                	return;
+				}
+			} else { System.out.println("You have reached the maximum connection level\n"); return; }
+		 }
+
+		String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
+        	int get_user = esql.executeQuery(query);
+        	if (get_user <= 0){
+        		System.out.println("Recipient not found. Try Again.");
+        		return;
+        	}
+
+		String status = "Request";
+        	String query2 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','%s')", authorisedUser, sendToUser, status);
+                                	esql.executeUpdate(query2);
+        	System.out.println("Successfully sent connection request.");
+     	} catch (Exception e) { System.err.println (e.getMessage ()); return; }
    }
 
    public static void SendRequestHelper(ProfNetwork esql, String authorisedUser, String sendToUser){ //Helper version of send request where the recipient is already known. Such as from the friendList
-     try{
-        String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
-        int get_user = esql.executeQuery(query);
-        if (get_user <= 0){
-          System.out.println("Recipent not found. Try Again.");
-          return;
-        }
-        //Here add some sort of connection level check? It checks the friend list? Not sure about that part
-        //if (connection_level > 3){
-        //  System.out.println("Recipient out of connection bounds");
-        //  return;
-        //}
+     try {
+		String query3 = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", authorisedUser);
+            	int friend_count = esql.executeQuery(query3);
+                if (friend_count == 0){
+                        if (connection_level >= 4) { System.out.println("You have reached the maximum connection level\n"); return; }
+                } else if (friend_count > 0){
+                        if (connection_level >= 6){ System.out.println("You have reached the maximum connection level\n"); return; }
+                 }	
+
+        	String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
+        	int get_user = esql.executeQuery(query);
+        	if (get_user <= 0){
+          		System.out.println("Recipient not found. Try Again.");
+          		return;
+        	}
+
         String status = "Request";
         String query2 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','%s')", authorisedUser, sendToUser, status);
 				esql.executeUpdate(query2);
         System.out.println("Successfully sent connection request.");
-     }
-     catch(Exception e){
-        System.err.println (e.getMessage ());
-        return;
-     }
+     } catch(Exception e){ System.err.println (e.getMessage ()); return; }
    }
 
    public static void ViewRequests(ProfNetwork esql, String authorisedUser){
@@ -865,13 +922,18 @@ public class ProfNetwork {
                String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId='%s' AND status='%s'", authorisedUser, status);
                get_requests = esql.executeQueryAndReturnResult(query);
                if (get_requests.isEmpty()){
+		  System.out.println();
                   System.out.println("No incoming Requests found.");
+		  System.out.println();
                return;
                }
-               System.out.println("Here are the userIds sending an incoming request");
+	       System.out.println();	
+               System.out.println("Here are the userIds sending an incoming request:");
+   	       System.out.println();	    
                for(int i = 0; i < get_requests.size(); i++){
 					 	      System.out.println(get_requests.get(i).get(0));
 				       }
+	       System.out.println();
                System.out.println("Successfully displayed incoming requests.");
                break;
             case 2:
@@ -881,11 +943,12 @@ public class ProfNetwork {
                String query2 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId='%s' AND connectionId='%s' AND status='%s'", connection, authorisedUser, status2);
                int verify = esql.executeQuery(query2);
                if (verify <= 0){
-                  System.out.println("Incomming request not found for that User. Try Again.");
+                  System.out.println("Incoming request not found for that User. Try Again.");
                break;
                }
                boolean acceptmenu = true;
                while(acceptmenu){
+		  System.out.println();
                   System.out.println("Accept/Reject MENU");
                   System.out.println("---------");
                   System.out.println("1. Accept current request");
@@ -895,13 +958,18 @@ public class ProfNetwork {
                   switch (readChoice()){
                   case 1:
                      String query3 = String.format("UPDATE CONNECTION_USR SET status='Accept' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+		     String query5 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','Accept')", authorisedUser, connection);
                      esql.executeUpdate(query3);
+		     esql.executeUpdate(query5);
+		     System.out.println();
                      System.out.println("Successfully accepted connection request.");
+		     System.out.println();
                      acceptmenu = false; break;
                   case 2:
-                     String query4 = String.format("UPDATE CONNECTION_USR SET status='Reject' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+                     String query4 = String.format("DELETE FROM CONNECTION_USR WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
                      esql.executeUpdate(query4);
                      System.out.println("Successfully rejected connection request.");
+		     System.out.println();
                      acceptmenu = false; break;
                   case 9: acceptmenu = false; break;
                   default : System.out.println("Unrecognized choice!"); break;
@@ -920,7 +988,7 @@ public class ProfNetwork {
 
    public static void SearchUser(ProfNetwork esql){
 	  try {
-   		     System.out.print("\tEnter a user ID to search for: ");
+   		 System.out.print("\tEnter a user ID to search for: ");
         	 String user = in.readLine();
         	 String query = String.format("SELECT userId, name, email, dateOfBirth FROM USR WHERE userID='%s'", user);
 
@@ -929,14 +997,14 @@ public class ProfNetwork {
         		     System.out.println("User not found. Try Again.");
                 return;
         	 } else {
-         		     esql.ViewProfile(query);
+         		     esql.ViewProfile(esql, query);
 		       }
    	 } catch (Exception e) {
 		       System.err.println (e.getMessage ());
 	   }
   }
 
-   public void ViewProfile(String query){
+   public void ViewProfile(ProfNetwork esql, String query){
    	try {
         	Statement stmt = this._connection.createStatement ();
         	ResultSet rs = stmt.executeQuery (query);
@@ -944,32 +1012,49 @@ public class ProfNetwork {
         	ResultSetMetaData rsmd = rs.getMetaData ();
         	int numCol = rsmd.getColumnCount ();
         	boolean outputHeader = true;
+		String username = "";
         	while (rs.next()){
                 	for (int i=1; i<=numCol; ++i){
 				if (i == 1){
+					username = rs.getString(i);
 					System.out.println();
-					System.out.println(rs.getString(i) + "'s PROFILE");
+					System.out.println(username + "'s PROFILE");
                 			System.out.println("---------");
-				}
+				} 
                         	System.out.print (rows[i] + ": " + rs.getString (i) + "\t");
                         	System.out.println ();
                 	}
         	}
         	stmt.close ();
+		if (username == authorisedUser){
+			connection_level = 0;
+		}
 		System.out.println();
         	System.out.println("1. Send a message");
         	System.out.println("2. View friends list");
-		//This needs to be changed depending on if you're friends or not.
 		System.out.println("3. Add friend");
-        	//System.out.println("3. Remove friend");
 		System.out.println(".........................");
         	System.out.println("9. Go back");
+		System.out.println();
 
+		String query3 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId = '%s' AND connectionId = '%s' AND status = 'Accept'", authorisedUser, username);
+                int verify2 = esql.executeQuery(query3);
+                if (verify2 > 0){connection_level = 0; }
+		else { connection_level++; }
+		System.out.println("Connection Level: " + connection_level);
+		System.out.println();
         	switch (readChoice()){
-        		case 1: break;
-                	case 2: break;
-                	case 3: break;
-                	case 9: return;
+        		case 1: NewMessageHelper(esql, authorisedUser, username); break;
+                	case 2: FriendList(esql, username); break;
+                	case 3: 
+				if (username == authorisedUser) { System.out.println("You can't be friends with yourself!"); break; } 
+   				else { 
+					String query2 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId = '%s' AND connectionId = '%s' AND status = 'Accept'", authorisedUser, username);
+                                        int verify = esql.executeQuery(query2);
+                                        if (verify > 0){System.out.println("This user is already your friend."); break; } 
+					else { SendRequestHelper(esql, authorisedUser, username); break; }
+				}
+                	case 9: connection_level--; return;
                 	default : System.out.println("Unrecognized choice!"); break;
         	}
   	} catch (Exception e) {
