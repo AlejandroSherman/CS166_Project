@@ -471,7 +471,9 @@ public class ProfNetwork {
 		List<List<String>> friends = new ArrayList<List<String>>();
 		friends = esql.executeQueryAndReturnResult(query);
 		if (friends.isEmpty()){
+			System.out.println();
 			System.out.println("This user has no friends");
+			System.out.println();
 			return;
 		}
 		System.out.println();
@@ -481,18 +483,45 @@ public class ProfNetwork {
 		for (int i = 0; i < friends.size(); i++) { System.out.println(friends.get(i).get(0)); }
 		
 		System.out.println();
-                System.out.println("1. Go to profile");
-		System.out.println("2. Delete friend");
+                System.out.println("1. Search a user");
+		if (user == authorisedUser){
+			System.out.println("2. Delete friend");
+		}
 		System.out.println(".........................");
 		System.out.println("9. Go back");
 
 		switch (readChoice()){
         		case 1: esql.SearchUser(esql); break;
                 	case 2:	
-				
+				boolean deletemenu = true;		
+				while(deletemenu){
+                  			System.out.print("\tEnter userId to remove: ");
+					String userToDelete = in.readLine();
 
-				break;
-                	case 3: break;
+					if (userToDelete.length() == 0){
+           					System.out.println("Invalid. Try again.");
+           					return;
+        				}
+
+        				String query2 = String.format("SELECT * FROM USR WHERE userId='%s'", userToDelete);
+        				int get_user = esql.executeQuery(query2);
+        				if (get_user <= 0){
+          					System.out.println("User not found. Try Again.");
+          					return;
+        				}
+				
+					String status = "Reject";
+					String query3 = String.format("DELETE FROM CONNECTION_USR WHERE status='Accept' AND userId='%s' AND connectionId='%s'", userToDelete, authorisedUser);
+                     			String query4 = String.format("DELETE FROM CONNECTION_USR WHERE status='Accept' AND userId='%s' AND connectionId='%s'", authorisedUser, userToDelete);
+					esql.executeUpdate(query3);
+					esql.executeUpdate(query4);
+					System.out.println();
+					String output = String.format("%s has been removed from your friends list", userToDelete);
+					System.out.println(output);
+                  			System.out.println(".........................");
+					deletemenu = false;
+					break;
+				}
                 	case 9: return;
                 	default : System.out.println("Unrecognized choice!"); break;
         	}
@@ -761,7 +790,7 @@ public class ProfNetwork {
    					        String query2b = String.format("SELECT contents FROM MESSAGE WHERE msgId='%s' AND receiverId='%s'", mes_id_intb, authorisedUser);
                     int verify2b = esql.executeQueryAndPrintResult(query2b);
                     if(verify2b < 1){
-                      System.out.println("No recieved message with that ID found.");
+                      System.out.println("No received message with that ID found.");
                       break;
                     }
                     String read = "Read";
@@ -789,7 +818,7 @@ public class ProfNetwork {
                     List<List<String>> get_message_statusb = new ArrayList<List<String>>();
                     get_message_statusb = esql.executeQueryAndReturnResult(queryb3);
                     if (get_message_statusb.isEmpty()){
-                      System.out.println("No recieved message with that ID available to delete.");
+                      System.out.println("No received message with that ID available to delete.");
                       break;
                     }
                     else if(get_message_statusb.get(0).get(0).equals("0")){ //Neither have deleted the message
@@ -895,13 +924,18 @@ public class ProfNetwork {
                String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId='%s' AND status='%s'", authorisedUser, status);
                get_requests = esql.executeQueryAndReturnResult(query);
                if (get_requests.isEmpty()){
+		  System.out.println();
                   System.out.println("No incoming Requests found.");
+		  System.out.println();
                return;
                }
-               System.out.println("Here are the userIds sending an incoming request");
+	       System.out.println();	
+               System.out.println("Here are the userIds sending an incoming request:");
+   	       System.out.println();	    
                for(int i = 0; i < get_requests.size(); i++){
 					 	      System.out.println(get_requests.get(i).get(0));
 				       }
+	       System.out.println();
                System.out.println("Successfully displayed incoming requests.");
                break;
             case 2:
@@ -916,6 +950,7 @@ public class ProfNetwork {
                }
                boolean acceptmenu = true;
                while(acceptmenu){
+		  System.out.println();
                   System.out.println("Accept/Reject MENU");
                   System.out.println("---------");
                   System.out.println("1. Accept current request");
@@ -928,12 +963,15 @@ public class ProfNetwork {
 		     String query5 = String.format("INSERT INTO CONNECTION_USR (userId, connectionId, status) VALUES ('%s','%s','Accept')", authorisedUser, connection);
                      esql.executeUpdate(query3);
 		     esql.executeUpdate(query5);
+		     System.out.println();
                      System.out.println("Successfully accepted connection request.");
+		     System.out.println();
                      acceptmenu = false; break;
                   case 2:
-                     String query4 = String.format("UPDATE CONNECTION_USR SET status='Reject' WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
+                     String query4 = String.format("DELETE FROM CONNECTION_USR WHERE userId='%s' AND connectionId='%s'", connection, authorisedUser);
                      esql.executeUpdate(query4);
                      System.out.println("Successfully rejected connection request.");
+		     System.out.println();
                      acceptmenu = false; break;
                   case 9: acceptmenu = false; break;
                   default : System.out.println("Unrecognized choice!"); break;
