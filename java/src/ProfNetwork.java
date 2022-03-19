@@ -1,4 +1,6 @@
 /*
+ * Alejandro Sherman (asher011, SID: 862062898)
+ * Briana McGhee (bmcgh001, SID: 861295405)
  * Template JAVA User Interface
  * =============================
  *
@@ -252,7 +254,7 @@ public class ProfNetwork {
          String user = args[2];
          esql = new ProfNetwork (dbname, dbport, user, "");
 
-	
+
          boolean keepon = true;
          while(keepon) {
             // These are sample SQL statements
@@ -483,7 +485,7 @@ public class ProfNetwork {
 	}
    }
    public static void FriendList(ProfNetwork esql, String user){
-	try {  
+	try {
 		String query = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", user);
 		List<List<String>> friends = new ArrayList<List<String>>();
 		friends = esql.executeQueryAndReturnResult(query);
@@ -498,7 +500,7 @@ public class ProfNetwork {
                 System.out.println("---------");
 
 		for (int i = 0; i < friends.size(); i++) { System.out.println(friends.get(i).get(0)); }
-		
+
 		System.out.println();
                 System.out.println("1. Search a user");
 		if (user == authorisedUser){
@@ -843,19 +845,19 @@ public class ProfNetwork {
 
    public static void SendRequest(ProfNetwork esql, String authorisedUser){
 	try {
-		String query3 = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", authorisedUser);	
+		String query3 = String.format("SELECT userId FROM CONNECTION_USR WHERE connectionId = '%s' AND status = 'Accept'", authorisedUser);
 		int friend_count = esql.executeQuery(query3);
 		String sendToUser = "";
-	
+
 		if (friend_count == 0){
-			if (connection_level < 4){	
+			if (connection_level < 4){
                                 System.out.print("\tEnter userId to send a request to: ");
                                 sendToUser = in.readLine();
                                 if (sendToUser.length() == 0){
                                 	System.out.println("Recipient can't be empty. Try again.");
                                 	return;
 				}
-			} else { System.out.println("You have reached the maximum connection level\n"); return; } 	
+			} else { System.out.println("You have reached the maximum connection level\n"); return; }
 		} else if (friend_count > 0){
 			if (connection_level < 6){
                            	System.out.print("\tEnter userId to send a request to: ");
@@ -889,7 +891,7 @@ public class ProfNetwork {
                         if (connection_level >= 4) { System.out.println("You have reached the maximum connection level\n"); return; }
                 } else if (friend_count > 0){
                         if (connection_level >= 6){ System.out.println("You have reached the maximum connection level\n"); return; }
-                 }	
+                 }
 
         	String query = String.format("SELECT * FROM USR WHERE userId='%s'", sendToUser);
         	int get_user = esql.executeQuery(query);
@@ -927,9 +929,9 @@ public class ProfNetwork {
 		  System.out.println();
                return;
                }
-	       System.out.println();	
+	       System.out.println();
                System.out.println("Here are the userIds sending an incoming request:");
-   	       System.out.println();	    
+   	       System.out.println();
                for(int i = 0; i < get_requests.size(); i++){
 					 	      System.out.println(get_requests.get(i).get(0));
 				       }
@@ -1020,7 +1022,7 @@ public class ProfNetwork {
 					System.out.println();
 					System.out.println(username + "'s PROFILE");
                 			System.out.println("---------");
-				} 
+				}
                         	System.out.print (rows[i] + ": " + rs.getString (i) + "\t");
                         	System.out.println ();
                 	}
@@ -1046,12 +1048,12 @@ public class ProfNetwork {
         	switch (readChoice()){
         		case 1: NewMessageHelper(esql, authorisedUser, username); break;
                 	case 2: FriendList(esql, username); break;
-                	case 3: 
-				if (username == authorisedUser) { System.out.println("You can't be friends with yourself!"); break; } 
-   				else { 
+                	case 3:
+				if (username == authorisedUser) { System.out.println("You can't be friends with yourself!"); break; }
+   				else {
 					String query2 = String.format("SELECT userId FROM CONNECTION_USR WHERE userId = '%s' AND connectionId = '%s' AND status = 'Accept'", authorisedUser, username);
                                         int verify = esql.executeQuery(query2);
-                                        if (verify > 0){System.out.println("This user is already your friend."); break; } 
+                                        if (verify > 0){System.out.println("This user is already your friend."); break; }
 					else { SendRequestHelper(esql, authorisedUser, username); break; }
 				}
                 	case 9: connection_level--; return;
